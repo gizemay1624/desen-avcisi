@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<title>Desen Avcısı</title>
+	<style>
+		:root {
+			--bg: #f8fafc;
+			--surface: #ffffff;
+			--primary: #475569; /* Slate */
+			--accent: #6366f1; /* Indigo */
+			--success: #10b981;
+			--danger: #ef4444;
+			--border: #e2e8f0;
+			--shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+			--modal-overlay: rgba(15, 23, 42, 0.85);
+		}
+
+		* { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+		
+		body {
+			margin: 0; padding: 0;
+			font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+			background-color: var(--bg);
+			color: var(--primary);
+			height: 100vh;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+		}
+
+		/* Üst Bilgi Barı */
+		header {
+			background: var(--surface);
+			padding: 0 20px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+			z-index: 10;
+			height: 60px;
+			flex-shrink: 0;
+		}
+
+		.header-left { display: flex; align-items: center; gap: 10px; }
+		.header-right { display: flex; align-items: center; gap: 15px; }
+
+		.level-badge {
+			background: var(--accent);
+			color: white;
+			padding: 5px 12px;
+			border-radius: 20px;
+			font-weight: 700;
+			font-size: 0.9rem;
+			box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+		}
+
+		.score-info { font-size: 0.85rem; color: #64748b; font-weight: 600; }
+
+		.icon-btn {
+			background: #f1f5f9;
+			border: none;
+			width: 36px; height: 36px;
+			border-radius: 50%;
+			display: flex; align-items: center; justify-content: center;
+			font-weight: bold; color: var(--primary);
+			cursor: pointer;
+			font-size: 1.1rem;
+			transition: background 0.2s;
+		}
+		.icon-btn:active { transform: scale(0.95); background: #e2e8f0; }
+		.exit-btn { color: var(--danger); background: #fee2e2; }
+
+		/* Ana Oyun Alanı */
+		main {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 15px;
+			padding: 10px;
+			position: relative;
+			width: 100%;
+		}
+
+		.boards-container {
+			display: flex;
+			gap: 20px;
+			align-items: center;
+			justify-content: center;
+			width: 100%;
+			max-width: 900px;
+		}
+
+		/* Kartlar */
+		.game-card {
+			background: var(--surface);
+			padding: 10px;
+			border-radius: 12px;
+			box-shadow: var(--shadow);
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			transition: transform 0.2s;
+		}
+		
+		.card-title {
+			font-size: 0.75rem;
+			text-transform: uppercase;
+			letter-spacing: 1px;
+			color: #94a3b8;
+			margin-bottom: 8px;
+			font-weight: 700;
+		}
+
+		/* Canvas ve Grid */
+		canvas {
+			border-radius: 4px;
+			background: #fff;
+			box-shadow: inset 0 0 0 1px #cbd5e1;
+		}
+
+		.player-grid {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 1px;
+			background: #cbd5e1;
+			border: 4px solid #fff;
+			border-radius: 6px;
+			width: 200px; height: 200px; /* Varsayılan */
+		}
+
+		.cell {
+			background-color: #fff;
+			cursor: pointer;
+			transition: transform 0.1s;
+			position: relative;
+		}
+		/* Dokunmatik cihazlarda gecikmeyi önler */
+		.cell { touch-action: manipulation; } 
+		.cell:active { transform: scale(0.92); z-index: 2; }
+
+		/* Rakip Barı (Sadece Düello modunda görünür) */
+		#rival-wrapper {
+			width: 100%; max-width: 420px;
+			display: none; /* JS ile açılacak */
+			flex-direction: column;
+			gap: 5px;
+		}
+		.progress-bg { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+		.progress-fill { height: 100%; background: var(--danger); width: 0%; transition: width 0.2s linear; }
+
+		/* Alt Kontrol Paneli (Palette) */
+		.controls {
+			background: var(--surface);
+			width: 100%;
+			padding: 15px 10px 30px 10px; /* Alttan extra boşluk iOS barı için */
+			box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			border-top-left-radius: 20px;
+			border-top-right-radius: 20px;
+			z-index: 20;
+			flex-shrink: 0;
+		}
+
+		.palette-label { font-size: 0.85rem; margin-bottom: 10px; color: #64748b; }
+
+		.palette {
+			display: flex;
+			gap: 12px;
+			justify-content: center;
+			flex-wrap: wrap;
+			margin-bottom: 15px;
+		}
+
+		.p-btn {
+			width: 45px; height: 45px;
+			border-radius: 10px;
+			border: 2px solid #e2e8f0;
+			cursor: pointer;
+			position: relative;
+			transition: all 0.2s;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+			touch-action: manipulation;
+		}
+
+		.p-btn.active {
+			border-color: var(--accent);
+			transform: translateY(-5px);
+			box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+		}
+		
+		.p-btn.active::after {
+			content: '';
+			position: absolute;
+			bottom: -10px; left: 50%;
+			transform: translateX(-50%);
+			width: 6px; height: 6px;
+			background: var(--accent);
+			border-radius: 50%;
+		}
+
+		.check-btn {
+			background: var(--primary);
+			color: white;
+			border: none;
+			padding: 14px 50px;
+			border-radius: 12px;
+			font-size: 1rem;
+			font-weight: 600;
+			cursor: pointer;
+			box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+			transition: transform 0.1s;
+			touch-action: manipulation;
+		}
+		.check-btn:active { transform: scale(0.96); }
+
+		/* DESENLER */
+		.pat-0 { background: #fff; } 
+		.pat-1 { background: #1e293b; } 
+		.pat-2 { background: linear-gradient(45deg, #1e293b 50%, #fff 50%); }
+		.pat-3 { background: linear-gradient(135deg, #fff 50%, #1e293b 50%); }
+		.pat-4 { background: radial-gradient(circle, #1e293b 35%, #fff 36%); }
+		.pat-5 { background: radial-gradient(circle, #fff 35%, #1e293b 36%); }
+
+		/* FULL EKRAN ARAYÜZLER (Menu & Modal) */
+		.overlay {
+			position: fixed; top:0; left:0; right:0; bottom:0;
+			background: var(--bg);
+			z-index: 100;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 20px;
+			text-align: center;
+			overflow-y: auto;
+		}
+
+		.modal-backdrop {
+			position: fixed; top:0; left:0; right:0; bottom:0;
+			background: var(--modal-overlay);
+			z-index: 200;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			backdrop-filter: blur(4px);
+			opacity: 0; pointer-events: none; transition: opacity 0.3s;
+		}
+		.modal-backdrop.show { opacity: 1; pointer-events: all; }
+
+		.modal-card {
+			background: white;
+			padding: 30px;
+			border-radius: 20px;
+			width: 90%; max-width: 360px;
+			text-align: center;
+			box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+			transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+		}
+		.modal-backdrop.show .modal-card { transform: scale(1); }
+
+		.hero-title { font-size: 2.5rem; color: var(--primary); margin: 0; font-weight: 800; letter-spacing: -1px; line-height: 1.1; }
+		.hero-subtitle { color: var(--accent); margin: 5px 0 20px 0; font-size: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;}
+		
+		.instruction-box {
+			background: white;
+			padding: 20px;
+			border-radius: 16px;
+			box-shadow: var(--shadow);
+			color: #64748b;
+			font-size: 0.95rem;
+			line-height: 1.5;
+			max-width: 400px;
+			margin-bottom: 30px;
+			border: 1px solid var(--border);
+		}
+
+		.mode-container {
+			display: flex;
+			flex-direction: column;
+			gap: 15px;
+			width: 100%;
+			max-width: 340px;
+		}
+
+		.mode-card {
+			background: white;
+			padding: 15px 20px;
+			border-radius: 16px;
+			box-shadow: var(--shadow);
+			cursor: pointer;
+			border: 2px solid transparent;
+			transition: all 0.2s;
+			display: flex;
+			align-items: center;
+			gap: 15px;
+			text-align: left;
+		}
+		.mode-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+		.mode-icon { font-size: 2rem; }
+		.mode-info { flex: 1; }
+		.mode-name { font-weight: 700; font-size: 1.1rem; color: var(--primary); display: block;}
+		.mode-desc { font-size: 0.85rem; color: #94a3b8; margin-top: 2px; display: block;}
+
+		.hidden { display: none !important; }
+
+		/* Modal Butonları */
+		.modal-btn {
+			background: var(--accent);
+			color: white;
+			border: none;
+			padding: 12px 30px;
+			border-radius: 10px;
+			font-size: 1rem;
+			font-weight: 600;
+			cursor: pointer;
+			margin-top: 15px;
+			width: 100%;
+		}
+		.modal-btn.secondary { background: #e2e8f0; color: var(--primary); }
+
+		/* Responsive Ayarlar */
+		@media (max-width: 600px) {
+			.boards-container { flex-direction: column; gap: 15px; }
+			/* Grid boyutu ekranın genişliğine göre dinamik olsun (40vmin = ekranın kısa kenarının %40'ı) */
+			.player-grid, canvas { width: 40vmin; height: 40vmin; min-width: 200px; min-height: 200px; }
+			.game-card { width: auto; min-width: min-content; }
+			.p-btn { width: 12vmin; height: 12vmin; }
+			.hero-title { font-size: 2rem; }
+		}
+
+	</style>
+</head>
+<body>
+
+	<div id="start-screen" class="overlay">
+		<div class="hero-title">DESEN AVCISI</div>
+		<div class="hero-subtitle">Görsel Zeka ve Dikkat Oyunu</div>
+		
+		<div class="instruction-box">
+			Oyunun amacı, alt kısımda verilen farklı desen paletini kullanarak 
+			<b>Hedef</b> tahtasındaki görselin aynısını <b>Senin Alanın</b>'da oluşturmaktır.<br><br>
+			İyi eğlenceler!
+		</div>
+
+		<div class="mode-container">
+			<div class="mode-card" onclick="initGame('solo')">
+				<span class="mode-icon">🧘</span>
+				<div class="mode-info">
+					<span class="mode-name">Alıştırma Modu</span>
+					<span class="mode-desc">Süre sınırı yok. Rahatla ve çöz.</span>
+				</div>
+			</div>
+
+			<div class="mode-card" onclick="initGame('vs')">
+				<span class="mode-icon">⚡</span>
+				<div class="mode-info">
+					<span class="mode-name">Düello Modu</span>
+					<span class="mode-desc">Yapay zekaya karşı yarış!</span>
+				</div>
+			</div>
+		</div>
+		
+		<div style="margin-top: 25px; font-size: 0.9rem; color: #94a3b8;">
+			En Yüksek Seviyen: <span id="menu-highscore" style="color:var(--accent); font-weight:bold;">1</span>
+		</div>
+	</div>
+
+	<div id="game-modal" class="modal-backdrop">
+		<div class="modal-card">
+			<div id="modal-icon" style="font-size: 3rem; margin-bottom: 10px;">🏆</div>
+			<h2 id="modal-title" style="margin: 0 0 10px 0; color:var(--primary);">Tebrikler!</h2>
+			<p id="modal-msg" style="color:#64748b; margin-bottom: 20px;">Seviye tamamlandı.</p>
+			<button id="modal-action-btn" class="modal-btn" onclick="closeGameModal()">Sonraki Seviye</button>
+		</div>
+	</div>
+
+	<div id="help-modal" class="modal-backdrop">
+		<div class="modal-card">
+			<div style="font-size: 2.5rem; margin-bottom: 10px;">💡</div>
+			<h2 style="margin: 0 0 10px 0;">Nasıl Oynanır?</h2>
+			<p style="color:#64748b; text-align: left; font-size: 0.95rem; line-height: 1.6;">
+				1. Aşağıdaki <b>desen paletinden</b> bir desen seç.<br>
+				2. <b>Senin Alanın</b> üzerindeki karelere dokunarak o deseni uygula.<br>
+				3. <b>Hedef</b> görselin aynısını oluşturduğunu düşünüyorsan <b>KONTROL ET</b> butonuna bas.
+			</p>
+			<button class="modal-btn secondary" onclick="toggleHelp(false)">Anladım</button>
+		</div>
+	</div>
+
+	<header>
+		<div class="header-left">
+			<div class="level-badge" id="level-display">Seviye 1</div>
+			<div class="score-info">Rekor: <span id="game-highscore">1</span></div>
+		</div>
+		<div class="header-right">
+			<button class="icon-btn" onclick="toggleHelp(true)">?</button>
+			<button class="icon-btn exit-btn" onclick="location.reload()">✕</button>
+		</div>
+	</header>
+
+	<main>
+		<div id="rival-wrapper">
+			<div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#64748b;">
+				<span>🤖 Rakip</span>
+				<span id="rival-status">Çözüyor...</span>
+			</div>
+			<div class="progress-bg"><div id="rival-bar" class="progress-fill"></div></div>
+		</div>
+
+		<div class="boards-container">
+			<div class="game-card">
+				<div class="card-title">HEDEF</div>
+				<canvas id="targetCanvas" width="200" height="200"></canvas>
+			</div>
+
+			<div class="game-card">
+				<div class="card-title">SENİN ALANIN</div>
+				<div id="grid" class="player-grid">
+					</div>
+			</div>
+		</div>
+	</main>
+
+	<div class="controls">
+		<div class="palette-label">Deseni Seç:</div>
+		<div class="palette" id="palette">
+			<div class="p-btn pat-0 active" onclick="selectPattern(0, this)"></div>
+			<div class="p-btn pat-1" onclick="selectPattern(1, this)"></div>
+			<div class="p-btn pat-2" onclick="selectPattern(2, this)"></div>
+			<div class="p-btn pat-3" onclick="selectPattern(3, this)"></div>
+			<div class="p-btn pat-4" onclick="selectPattern(4, this)"></div>
+			<div class="p-btn pat-5" onclick="selectPattern(5, this)"></div>
+		</div>
+		<button class="check-btn" onclick="checkSolution()">KONTROL ET</button>
+	</div>
+
+	<script>
+		// --- SES SİSTEMİ (AudioContext) ---
+		// Harici dosya olmadan ses üretmek için.
+		const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+		
+		function playSound(type) {
+			if(audioCtx.state === 'suspended') audioCtx.resume();
+			const osc = audioCtx.createOscillator();
+			const gainNode = audioCtx.createGain();
+			osc.connect(gainNode);
+			gainNode.connect(audioCtx.destination);
+
+			if(type === 'win') {
+				// Zafer: Artan tını
+				osc.type = 'sine';
+				osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+				osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+				gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+				gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+				osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+			} else if (type === 'pop') {
+				// Tıklama: Kısa pop
+				osc.type = 'triangle';
+				osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+				gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+				gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+				osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+			} else if (type === 'error') {
+				// Hata: Düşük tını
+				osc.type = 'sawtooth';
+				osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+				osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.2);
+				gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+				gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+				osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+			}
+		}
+
+		// --- DEĞİŞKENLER ---
+		let currentMode = 'solo';
+		let currentLevel = 1;
+		let activePatternId = 0;
+		
+		let targetData = [];
+		let playerData = Array(16).fill(0);
+		let isGameRunning = false;
+		
+		let rivalInterval;
+		let rivalProgress = 0;
+		let modalCallback = null; // Modal kapanınca çalışacak fonksiyon
+
+		// Highscore
+		let highScore = localStorage.getItem('geoHighscore') || 1;
+		document.getElementById('menu-highscore').innerText = highScore;
+		document.getElementById('game-highscore').innerText = highScore;
+
+		// Canvas Setup
+		const canvas = document.getElementById('targetCanvas');
+		const ctx = canvas.getContext('2d');
+		const dpr = window.devicePixelRatio || 1;
+		
+		// Canvas responsive boyutlandırma
+		function resizeCanvas() {
+			// CSS tarafından belirlenen boyutu al
+			const rect = canvas.getBoundingClientRect();
+			canvas.width = rect.width * dpr;
+			canvas.height = rect.height * dpr;
+			ctx.scale(dpr, dpr);
+			// Yeniden çiz
+			if(targetData.length > 0) drawCanvas();
+		}
+		window.addEventListener('resize', resizeCanvas);
+
+		// --- BAŞLATMA ---
+		function initGame(mode) {
+			// AudioContext'i kullanıcı etkileşimi ile başlat
+			if(audioCtx.state === 'suspended') audioCtx.resume();
+			
+			playSound('pop');
+			currentMode = mode;
+			currentLevel = 1;
+			
+			// UI Geçişi
+			document.getElementById('start-screen').classList.add('hidden');
+			document.getElementById('rival-wrapper').style.display = (mode === 'vs') ? 'flex' : 'none';
+
+			createGrid();
+			// İlk çizim için canvas boyutunu ayarla
+			resizeCanvas();
+			startLevel();
+		}
+
+		function createGrid() {
+			const grid = document.getElementById('grid');
+			grid.innerHTML = '';
+			for(let i=0; i<16; i++) {
+				let cell = document.createElement('div');
+				cell.className = 'cell pat-0';
+				cell.onclick = function() {
+					if(!isGameRunning) return;
+					playSound('pop');
+					playerData[i] = activePatternId;
+					this.className = `cell pat-${activePatternId}`;
+					this.style.transform = "scale(0.9)";
+					setTimeout(() => this.style.transform = "scale(1)", 100);
+				}
+				grid.appendChild(cell);
+			}
+		}
+
+		function startLevel() {
+			isGameRunning = true;
+			document.getElementById('level-display').innerText = `Seviye ${currentLevel}`;
+			
+			// Temizle
+			playerData.fill(0);
+			document.querySelectorAll('.cell').forEach(c => c.className = 'cell pat-0');
+
+			generateTarget();
+
+			if(currentMode === 'vs') {
+				startRivalAI();
+			}
+		}
+
+		// --- MANTIK ---
+		function generateTarget() {
+			targetData = [];
+			let allowedPatterns = [0, 1]; 
+			
+			if(currentLevel > 2) allowedPatterns.push(2, 3);
+			if(currentLevel > 5) allowedPatterns.push(4, 5);
+
+			for(let i=0; i<16; i++) {
+				const randIndex = Math.floor(Math.random() * allowedPatterns.length);
+				targetData.push(allowedPatterns[randIndex]);
+			}
+			drawCanvas();
+		}
+
+		function drawCanvas() {
+			const w = canvas.width / dpr;
+			const h = canvas.height / dpr;
+			ctx.clearRect(0,0, w, h);
+			
+			const cellSize = w / 4;
+
+			for(let i=0; i<16; i++) {
+				const type = targetData[i];
+				const x = (i % 4) * cellSize;
+				const y = Math.floor(i / 4) * cellSize;
+				drawBlock(type, x, y, cellSize);
+			}
+		}
+
+		function drawBlock(type, x, y, s) {
+			ctx.beginPath();
+			
+			if(type === 0) { // Beyaz
+				ctx.fillStyle = "#fff"; ctx.fillRect(x,y,s,s);
+			} 
+			else if(type === 1) { // Siyah
+				ctx.fillStyle = "#1e293b"; ctx.fillRect(x,y,s,s);
+			}
+			else if(type === 2) { // Sol Alt Siyah
+				ctx.fillStyle = "#fff"; ctx.fillRect(x,y,s,s);
+				ctx.fillStyle = "#1e293b"; 
+				ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+s, y+s); ctx.lineTo(x, y+s); ctx.fill();
+			}
+			else if(type === 3) { // Sağ Alt Siyah
+				ctx.fillStyle = "#fff"; ctx.fillRect(x,y,s,s);
+				ctx.fillStyle = "#1e293b";
+				ctx.beginPath(); ctx.moveTo(x+s,y); ctx.lineTo(x+s, y+s); ctx.lineTo(x, y+s); ctx.fill();
+			}
+			else if(type === 4) { // Nokta Beyaz Zemin
+				ctx.fillStyle = "#fff"; ctx.fillRect(x,y,s,s);
+				ctx.fillStyle = "#1e293b";
+				ctx.beginPath(); ctx.arc(x+s/2, y+s/2, s/3.5, 0, Math.PI*2); ctx.fill();
+			}
+			else if(type === 5) { // Nokta Siyah Zemin
+				ctx.fillStyle = "#1e293b"; ctx.fillRect(x,y,s,s);
+				ctx.fillStyle = "#fff";
+				ctx.beginPath(); ctx.arc(x+s/2, y+s/2, s/3.5, 0, Math.PI*2); ctx.fill();
+			}
+		}
+
+		function selectPattern(id, btnElement) {
+			playSound('pop');
+			activePatternId = id;
+			document.querySelectorAll('.p-btn').forEach(b => b.classList.remove('active'));
+			btnElement.classList.add('active');
+		}
+
+		function checkSolution() {
+			if(!isGameRunning) return;
+
+			let correct = true;
+			for(let i=0; i<16; i++) {
+				if(playerData[i] !== targetData[i]) {
+					correct = false;
+					break;
+				}
+			}
+
+			if(correct) {
+				handleWin();
+			} else {
+				playSound('error');
+				const grid = document.getElementById('grid');
+				grid.style.transform = "translateX(5px)";
+				setTimeout(() => grid.style.transform = "translateX(-5px)", 50);
+				setTimeout(() => grid.style.transform = "none", 100);
+			}
+		}
+
+		// --- MODAL YÖNETİMİ ---
+		function showGameModal(title, msg, icon, btnText, callback) {
+			document.getElementById('modal-title').innerText = title;
+			document.getElementById('modal-msg').innerHTML = msg;
+			document.getElementById('modal-icon').innerText = icon;
+			document.getElementById('modal-action-btn').innerText = btnText;
+			document.getElementById('game-modal').classList.add('show');
+			modalCallback = callback;
+		}
+
+		function closeGameModal() {
+			document.getElementById('game-modal').classList.remove('show');
+			if(modalCallback) modalCallback();
+		}
+
+		function toggleHelp(show) {
+			const el = document.getElementById('help-modal');
+			if(show) {
+				playSound('pop');
+				el.classList.add('show');
+			} else {
+				el.classList.remove('show');
+			}
+		}
+
+		function handleWin() {
+			clearInterval(rivalInterval);
+			playSound('win');
+			
+			currentLevel++;
+			if(currentLevel > highScore) {
+				highScore = currentLevel;
+				localStorage.setItem('geoHighscore', highScore);
+				document.getElementById('game-highscore').innerText = highScore;
+			}
+
+			showGameModal(
+				"Harika Gidiyorsun!", 
+				`${currentLevel}. Seviye seni bekliyor.`, 
+				"⭐", 
+				"Devam Et",
+				startLevel
+			);
+		}
+
+		// --- RAKİP AI ---
+		function startRivalAI() {
+			rivalProgress = 0;
+			const bar = document.getElementById('rival-bar');
+			bar.style.width = '0%';
+			
+			let duration = Math.max(15, 60 - (currentLevel * 2)); 
+			let stepTime = (duration * 1000) / 100;
+
+			rivalInterval = setInterval(() => {
+				rivalProgress += 1;
+				bar.style.width = rivalProgress + '%';
+				
+				if(rivalProgress >= 100) {
+					gameOver();
+				}
+			}, stepTime);
+		}
+
+		function gameOver() {
+			isGameRunning = false;
+			clearInterval(rivalInterval);
+			playSound('error');
+			
+			showGameModal(
+				"Süre Doldu!", 
+				"Rakip deseni daha hızlı tamamladı.", 
+				"🤖", 
+				"Tekrar Dene",
+				() => {
+					currentLevel = 1;
+					startLevel();
+				}
+			);
+		}
+	</script>
+</body>
+</html>
