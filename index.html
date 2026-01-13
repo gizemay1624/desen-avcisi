@@ -24,7 +24,7 @@
 			font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 			background-color: var(--bg);
 			color: var(--primary);
-			height: 100vh;
+			height: 100dvh;
 			display: flex;
 			flex-direction: column;
 			overflow: hidden;
@@ -83,6 +83,8 @@
 			padding: 10px;
 			position: relative;
 			width: 100%;
+		    overflow-y: auto; /* Sığmazsa kaydırma çubuğu çıkar, buton hep görünür */
+			min-height: 0;    /* Flex yapısının taşmasını engeller */
 		}
 
 		.boards-container {
@@ -156,7 +158,7 @@
 		.controls {
 			background: var(--surface);
 			width: 100%;
-			padding: 15px 10px 30px 10px; /* Alttan extra boşluk iOS barı için */
+			padding-bottom: calc(20px + env(safe-area-inset-bottom));
 			box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
 			display: flex;
 			flex-direction: column;
