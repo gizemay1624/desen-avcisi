@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-	<title>Desen Avcısı Pro</title>
+	<title>Desen Avcısı</title>
 	<style>
 		@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
 
@@ -56,13 +56,17 @@
 			box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3);
 		}
 
+		.header-actions { display: flex; align-items: center; }
 		.header-actions button {
 			background: #f1f2f6; border: none;
 			width: 36px; height: 36px; border-radius: 50%;
 			color: var(--primary-color); font-weight: bold; cursor: pointer;
 			margin-left: 8px; transition: all 0.2s;
+			font-family: inherit; font-size: 1rem;
+			display: flex; align-items: center; justify-content: center;
 		}
 		.header-actions button:active { transform: scale(0.9); }
+		.exit-btn { color: var(--danger-color) !important; background: #ffeaea !important; }
 
 		/* --- OYUN ALANI --- */
 		main {
@@ -102,7 +106,6 @@
 		}
 
 		/* Responsive Canvas/Grid Boyutlandırma */
-		/* Ekran genişliğine göre dinamik ayar */
 		:root { --board-size: min(38vw, 38vh, 260px); }
 		
 		canvas, .grid {
@@ -117,7 +120,7 @@
 			display: grid;
 			grid-template-columns: repeat(4, 1fr);
 			gap: 2px;
-			background: var(--primary-color); /* Grid çizgileri */
+			background: var(--primary-color);
 			border: 2px solid var(--primary-color);
 			cursor: pointer;
 		}
@@ -142,7 +145,6 @@
 			z-index: 20;
 		}
 
-		/* 12'li Palet Sistemi - 2 Satır */
 		.palette-grid {
 			display: grid;
 			grid-template-columns: repeat(6, 1fr);
@@ -199,11 +201,12 @@
 			text-align: center;
 			box-shadow: 0 10px 40px rgba(0,0,0,0.2);
 			transform: translateY(20px); transition: transform 0.3s;
+			max-height: 90vh; overflow-y: auto;
 		}
 		.modal-overlay.active .menu-card { transform: translateY(0); }
 
 		.menu-title { font-size: 2rem; font-weight: 800; color: var(--primary-color); margin: 0 0 10px 0; }
-		.menu-text { color: #7f8c8d; margin-bottom: 25px; line-height: 1.5; }
+		.menu-text { color: #7f8c8d; margin-bottom: 25px; line-height: 1.5; font-size: 0.95rem; }
 		
 		.mode-select {
 			display: flex; flex-direction: column; gap: 12px;
@@ -217,20 +220,17 @@
 		.mode-btn:hover { border-color: var(--accent-color); }
 		.mode-icon { font-size: 1.5rem; background: #fff5e6; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
 
-		.hidden { display: none !important; }
-
-		/* Animation Classes */
+		.shake { animation: shake 0.3s ease-in-out; }
 		@keyframes shake {
 			0% { transform: translateX(0); } 25% { transform: translateX(-5px); }
 			50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); }
 		}
-		.shake { animation: shake 0.3s ease-in-out; }
 
 		/* Mobil Düzenlemeler */
 		@media (max-width: 480px) {
 			.game-container { gap: 10px; }
 			.board-wrapper { padding: 8px; }
-			:root { --board-size: 42vw; } /* Mobilde yan yana daha rahat sığsın */
+			:root { --board-size: 42vw; } 
 			.palette-grid { gap: 6px; }
 		}
 	</style>
@@ -241,13 +241,13 @@
 		<div class="menu-card">
 			<div style="font-size:3rem; margin-bottom:10px;">🧩</div>
 			<h1 class="menu-title">DESEN AVCISI</h1>
-			<p class="menu-text">Görsel zekanı zorla. Basit karelerden başla, karmaşık illüzyonlara ulaş.</p>
+			<p class="menu-text">Verilen deseni incele ve parçaları kullanarak aynısını kendi alanında oluştur.</p>
 			
 			<div class="mode-select">
 				<div class="mode-btn" onclick="startGame('solo')">
 					<div class="mode-icon">🎓</div>
 					<div>
-						<div style="font-weight:700; color:var(--primary-color)">Öğrenci Modu</div>
+						<div style="font-weight:700; color:var(--primary-color)">Alıştırma Modu</div>
 						<div style="font-size:0.8rem; color:#95a5a6">Süre yok, 20 seviye. Öğren ve geliş.</div>
 					</div>
 				</div>
@@ -264,18 +264,19 @@
 
 	<div id="end-modal" class="modal-overlay">
 		<div class="menu-card">
-			<div id="end-icon" style="font-size: 4rem; margin-bottom: 10px;">🏆</div>
-			<h2 id="end-title" class="menu-title">Harika!</h2>
-			<p id="end-msg" class="menu-text">Doğru eşleşme.</p>
-			<button id="next-btn" class="check-btn" onclick="nextLevel()">Sonraki Seviye</button>
+			<div id="modal-icon" style="font-size: 4rem; margin-bottom: 10px;">🏆</div>
+			<h2 id="modal-title" class="menu-title">Başlık</h2>
+			<p id="modal-msg" class="menu-text">Mesaj</p>
+			<button id="modal-btn" class="check-btn">Tamam</button>
 		</div>
 	</div>
 
 	<header>
-		<div class="brand"><span>DESEN</span>PRO</div>
+		<div class="brand"><span>DESEN</span> AVCISI</div>
 		<div class="level-pill" id="level-txt">Seviye 1</div>
 		<div class="header-actions">
-			<button onclick="location.reload()">✕</button>
+			<button onclick="showHelp()">?</button>
+			<button class="exit-btn" onclick="location.reload()">✕</button>
 		</div>
 	</header>
 
@@ -305,53 +306,34 @@
 	</div>
 
 	<script>
-		// --- YAPILANDIRMA ---
 		const CONFIG = {
 			totalLevels: 20,
-			gridSize: 4, // 4x4
-			colors: {
-				bg: '#ffffff',
-				fill: '#2c3e50', // Koyu renk
-			}
+			gridSize: 4,
+			colors: { bg: '#ffffff', fill: '#2c3e50' }
 		};
 
-		// --- SHAPE DEFINITIONS (Görsel Kütüphanesi) ---
-		// 0: Boş, 1: Dolu
-		// 2-5: Üçgenler (Köşeler)
-		// 6-9: Yaylar/Çeyrek Daireler (Q-Bitz Tarzı)
-		// 10: Küçük Daire (Nokta)
-		// 11: Ters Çeyrek (Köşe dolu, içi boş yay) - Zorluk için
 		const SHAPES = [
-			{ id: 0, name: 'empty' },
-			{ id: 1, name: 'full' },
-			{ id: 2, name: 'tri-bl' }, // Sol Alt
-			{ id: 3, name: 'tri-br' }, // Sağ Alt
-			{ id: 4, name: 'tri-tl' }, // Sol Üst
-			{ id: 5, name: 'tri-tr' }, // Sağ Üst
-			{ id: 6, name: 'arc-bl' }, // Yay Sol Alt
-			{ id: 7, name: 'arc-br' }, // Yay Sağ Alt
-			{ id: 8, name: 'arc-tl' }, // Yay Sol Üst
-			{ id: 9, name: 'arc-tr' }, // Yay Sağ Üst
-			{ id: 10, name: 'dot' },   // Orta Nokta
-			{ id: 11, name: 'tri-inv' } // Özel: İki zıt üçgen (Kelebek) veya Noktalı Kare
+			{ id: 0, name: 'empty' }, { id: 1, name: 'full' },
+			{ id: 2, name: 'tri-bl' }, { id: 3, name: 'tri-br' },
+			{ id: 4, name: 'tri-tl' }, { id: 5, name: 'tri-tr' },
+			{ id: 6, name: 'arc-bl' }, { id: 7, name: 'arc-br' },
+			{ id: 8, name: 'arc-tl' }, { id: 9, name: 'arc-tr' },
+			{ id: 10, name: 'dot' }, { id: 11, name: 'tri-inv' }
 		];
 
-		// --- GLOBAL DEĞİŞKENLER ---
 		let state = {
 			mode: 'solo',
 			level: 1,
 			targetGrid: [],
 			playerGrid: new Array(16).fill(0),
-			selectedShape: 1, // Varsayılan: Dolu Kare
-			timer: null,
-			isPaused: false
+			selectedShape: 1,
+			timer: null
 		};
 
 		const canvas = document.getElementById('targetCanvas');
 		const ctx = canvas.getContext('2d');
 		const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-		// --- SES EFEKTLERİ ---
 		function playTone(type) {
 			if(audioCtx.state === 'suspended') audioCtx.resume();
 			const osc = audioCtx.createOscillator();
@@ -368,8 +350,8 @@
 			} else if (type === 'win') {
 				osc.type = 'triangle';
 				osc.frequency.setValueAtTime(440, now);
-				osc.frequency.setValueAtTime(554, now + 0.1); // C#
-				osc.frequency.setValueAtTime(659, now + 0.2); // E
+				osc.frequency.setValueAtTime(554, now + 0.1);
+				osc.frequency.setValueAtTime(659, now + 0.2);
 				gain.gain.setValueAtTime(0.1, now);
 				gain.gain.linearRampToValueAtTime(0, now + 0.4);
 				osc.start(); osc.stop(now + 0.4);
@@ -383,23 +365,17 @@
 			}
 		}
 
-		// --- INIT & DRAWING ---
 		function initPalette() {
 			const palette = document.getElementById('palette');
 			palette.innerHTML = '';
-			
-			// Palette butonlarını oluştur ve Canvas üzerine çizerek ikon oluştur
 			SHAPES.forEach(shape => {
 				const btn = document.createElement('div');
 				btn.className = `p-btn ${shape.id === 1 ? 'active' : ''}`;
 				btn.onclick = () => selectPalette(shape.id, btn);
 				
-				// Buton ikonu için mini canvas
 				const iconCanvas = document.createElement('canvas');
 				iconCanvas.width = 60; iconCanvas.height = 60;
 				const iconCtx = iconCanvas.getContext('2d');
-				
-				// Şekli butona çiz
 				drawShape(iconCtx, shape.id, 0, 0, 60);
 				
 				btn.style.backgroundImage = `url(${iconCanvas.toDataURL()})`;
@@ -413,124 +389,69 @@
 			const s = size;
 
 			switch(type) {
-				case 0: // Empty
-					c.fillStyle = "#fff"; c.fillRect(x,y,s,s);
-					break;
-				case 1: // Full
-					c.fillRect(x,y,s,s);
-					break;
-				case 2: // Tri BL
-					c.moveTo(x,y); c.lineTo(x, y+s); c.lineTo(x+s, y+s); c.fill();
-					break;
-				case 3: // Tri BR
-					c.moveTo(x+s,y); c.lineTo(x+s, y+s); c.lineTo(x, y+s); c.fill();
-					break;
-				case 4: // Tri TL
-					c.moveTo(x,y); c.lineTo(x+s, y); c.lineTo(x, y+s); c.fill();
-					break;
-				case 5: // Tri TR
-					c.moveTo(x,y); c.lineTo(x+s, y); c.lineTo(x+s, y+s); c.fill();
-					break;
-				case 6: // Arc BL (Sol Alt Köşe Dolu Yay)
-					c.moveTo(x, y+s); 
-					c.arc(x, y+s, s, 0, -Math.PI/2, true); 
-					c.lineTo(x, y+s); c.fill();
-					break;
-				case 7: // Arc BR
-					c.moveTo(x+s, y+s);
-					c.arc(x+s, y+s, s, Math.PI, Math.PI*1.5, false);
-					c.lineTo(x+s, y+s); c.fill();
-					break;
-				case 8: // Arc TL
-					c.moveTo(x, y);
-					c.arc(x, y, s, 0, Math.PI/2, false);
-					c.lineTo(x, y); c.fill();
-					break;
-				case 9: // Arc TR
-					c.moveTo(x+s, y);
-					c.arc(x+s, y, s, Math.PI, Math.PI/2, true);
-					c.lineTo(x+s, y); c.fill();
-					break;
-				case 10: // Dot
-					c.arc(x+s/2, y+s/2, s/3, 0, Math.PI*2); c.fill();
-					break;
-				case 11: // Özel (Diagonal Çizgi / Kelebek)
-					c.moveTo(x,y); c.lineTo(x+s, y+s); c.lineTo(x, y+s); c.fill(); // Alt Sol
-					c.beginPath(); 
-					c.moveTo(x,y); c.lineTo(x+s, y); c.lineTo(x+s, y+s); c.fill(); // Üst Sağ
-					// Bu aslında full kare gibi oldu, o yüzden farklı bir şey yapalım:
-					// Çapraz şerit
-					c.fillStyle = "#fff"; c.fillRect(x,y,s,s); c.fillStyle = CONFIG.colors.fill;
+				case 0: c.fillStyle = "#fff"; c.fillRect(x,y,s,s); break;
+				case 1: c.fillRect(x,y,s,s); break;
+				case 2: c.moveTo(x,y); c.lineTo(x, y+s); c.lineTo(x+s, y+s); c.fill(); break;
+				case 3: c.moveTo(x+s,y); c.lineTo(x+s, y+s); c.lineTo(x, y+s); c.fill(); break;
+				case 4: c.moveTo(x,y); c.lineTo(x+s, y); c.lineTo(x, y+s); c.fill(); break;
+				case 5: c.moveTo(x,y); c.lineTo(x+s, y); c.lineTo(x+s, y+s); c.fill(); break;
+				case 6: c.moveTo(x, y+s); c.arc(x, y+s, s, 0, -Math.PI/2, true); c.lineTo(x, y+s); c.fill(); break;
+				case 7: c.moveTo(x+s, y+s); c.arc(x+s, y+s, s, Math.PI, Math.PI*1.5, false); c.lineTo(x+s, y+s); c.fill(); break;
+				case 8: c.moveTo(x, y); c.arc(x, y, s, 0, Math.PI/2, false); c.lineTo(x, y); c.fill(); break;
+				case 9: c.moveTo(x+s, y); c.arc(x+s, y, s, Math.PI, Math.PI/2, true); c.lineTo(x+s, y); c.fill(); break;
+				case 10: c.arc(x+s/2, y+s/2, s/3, 0, Math.PI*2); c.fill(); break;
+				case 11: c.fillStyle = "#fff"; c.fillRect(x,y,s,s); c.fillStyle = CONFIG.colors.fill;
 					c.beginPath(); c.moveTo(x,y+s); c.lineTo(x+s/2, y+s); c.lineTo(x+s, y+s/2); c.lineTo(x+s, y); c.fill();
-					c.beginPath(); c.moveTo(x, y); c.lineTo(x+s/2, y); c.lineTo(x, y+s/2); c.fill();
-					break;
+					c.beginPath(); c.moveTo(x, y); c.lineTo(x+s/2, y); c.lineTo(x, y+s/2); c.fill(); break;
 			}
 		}
 
-		// --- LEVEL GENERATION (YAPAY ZEKA) ---
 		function generateLevel(lvl) {
 			state.targetGrid = new Array(16).fill(0);
 			
-			// HAVUZ BELİRLEME (Zorluk Seviyesi)
-			let allowedShapes = [0, 1]; // Temel
+			// --- ZORLUK AYARI (DÜZELTİLDİ) ---
+			// İlk seviyelerden itibaren üçgenler de dahil (0-5 arası)
+			// Böylece sadece kare değil, şekil oluşturma başlıyor.
+			let allowedShapes = [0, 1, 2, 3, 4, 5]; 
 			
-			if (lvl > 3) allowedShapes.push(2, 3, 4, 5); // Üçgenler
 			if (lvl > 7) allowedShapes.push(6, 7, 8, 9); // Yaylar
-			if (lvl > 12) allowedShapes.push(10, 11); // Noktalar ve Karmaşık
+			if (lvl > 12) allowedShapes.push(10, 11); // Noktalar
 			
-			// DESEN OLUŞTURMA ALGORİTMASI
 			if (lvl <= 3) {
-				// Rastgele Basit (Noise)
+				// Giriş: Basit desenler ama şekilli
 				for(let i=0; i<16; i++) state.targetGrid[i] = allowedShapes[Math.floor(Math.random()*allowedShapes.length)];
 			} 
 			else if (lvl <= 8) {
-				// Dikey Simetri
+				// Simetri (Dikey)
 				for(let r=0; r<4; r++) {
 					for(let c=0; c<2; c++) {
 						let val = allowedShapes[Math.floor(Math.random()*allowedShapes.length)];
 						state.targetGrid[r*4 + c] = val;
-						// Aynala (Basit mapping)
-						let mirrorVal = getMirrorShape(val, 'h');
-						state.targetGrid[r*4 + (3-c)] = mirrorVal;
+						// Aynalama basit: Aynı şekli koyuyoruz şimdilik simetri hissi için
+						// İstenirse getMirrorShape ile tam ayna yapılabilir
+						state.targetGrid[r*4 + (3-c)] = getMirrorShape(val, 'h');
 					}
 				}
 			} 
 			else if (lvl <= 14) {
-				// Merkezi Simetri (Radial) - Q-Bitz tarzı
-				// Sadece Sol Üst 2x2'yi oluştur, gerisini döndür
-				let quadrant = [
-					allowedShapes[Math.floor(Math.random()*allowedShapes.length)],
-					allowedShapes[Math.floor(Math.random()*allowedShapes.length)],
-					allowedShapes[Math.floor(Math.random()*allowedShapes.length)],
-					allowedShapes[Math.floor(Math.random()*allowedShapes.length)]
-				];
-				
-				// Q1 (Sol Üst)
-				state.targetGrid[0] = quadrant[0]; state.targetGrid[1] = quadrant[1];
-				state.targetGrid[4] = quadrant[2]; state.targetGrid[5] = quadrant[3];
-				
-				// Diğer quadrantları simetrik yap
-				// (Bu kısım biraz karmaşık, basitlik adına random rotasyonlar eklenebilir ama tam simetri daha şık durur)
-				// Şimdilik temiz random + curve ağırlıklı yapalım
-				for(let i=0; i<16; i++) state.targetGrid[i] = allowedShapes[Math.floor(Math.random()*allowedShapes.length)];
+				// Çeyrek Simetri (Radial)
+				let q = [0,1,2,3].map(()=> allowedShapes[Math.floor(Math.random()*allowedShapes.length)]);
+				state.targetGrid[0] = q[0]; state.targetGrid[1] = q[1];
+				state.targetGrid[4] = q[2]; state.targetGrid[5] = q[3];
+				for(let i=0; i<16; i++) if(i!==0 && i!==1 && i!==4 && i!==5) state.targetGrid[i] = allowedShapes[Math.floor(Math.random()*allowedShapes.length)];
 			}
 			else {
-				// KAOS & OP ART (Pattern tekrarları)
-				// Dama tahtası deseni üzerine şekiller
+				// Kaos
 				let base = allowedShapes[Math.floor(Math.random()*allowedShapes.length)];
 				let alt = allowedShapes[Math.floor(Math.random()*allowedShapes.length)];
-				for(let i=0; i<16; i++) {
-					let isEven = (Math.floor(i/4) + (i%4)) % 2 === 0;
-					state.targetGrid[i] = isEven ? base : alt;
-				}
+				for(let i=0; i<16; i++) state.targetGrid[i] = (i%2===0) ? base : alt;
+				// Üzerine biraz noise
+				for(let k=0; k<5; k++) state.targetGrid[Math.floor(Math.random()*16)] = allowedShapes[Math.floor(Math.random()*allowedShapes.length)];
 			}
-
 			renderTarget();
 		}
 
 		function getMirrorShape(id, axis) {
-			// Basit aynalama mantığı (Geliştirilebilir)
-			// Üçgenler: 2(BL)<->3(BR), 4(TL)<->5(TR)
 			if(axis === 'h') {
 				if(id===2) return 3; if(id===3) return 2;
 				if(id===4) return 5; if(id===5) return 4;
@@ -542,7 +463,6 @@
 
 		function renderTarget() {
 			const size = canvas.clientWidth;
-			// High DPI fix
 			const dpr = window.devicePixelRatio || 1;
 			canvas.width = size * dpr;
 			canvas.height = size * dpr;
@@ -558,15 +478,11 @@
 			}
 		}
 
-		// --- GAMEPLAY ---
 		function startGame(mode) {
 			state.mode = mode;
 			state.level = 1;
 			document.getElementById('start-modal').classList.remove('active');
-			
-			// VS Modu göstergesi
 			document.getElementById('vs-status').style.display = (mode === 'vs') ? 'flex' : 'none';
-			
 			initPalette();
 			createGrid();
 			loadLevel();
@@ -578,11 +494,7 @@
 			for(let i=0; i<16; i++) {
 				const cell = document.createElement('div');
 				cell.className = 'cell';
-				cell.dataset.idx = i;
-				
-				// Başlangıçta boş ikon çizimi (CSS background ile)
 				updateCellVisual(cell, 0);
-				
 				cell.onclick = () => {
 					playTone('tap');
 					state.playerGrid[i] = state.selectedShape;
@@ -593,8 +505,6 @@
 		}
 		
 		function updateCellVisual(element, typeId) {
-			// Performans için canvas yerine mini dataURL veya SVG kullanılabilir ama 
-			// dinamik çizim için burada anlık canvas oluşturup CSS background'a atıyoruz.
 			const c = document.createElement('canvas');
 			c.width = 64; c.height = 64;
 			const cx = c.getContext('2d');
@@ -613,9 +523,7 @@
 			document.getElementById('level-txt').innerText = `Seviye ${state.level} / ${CONFIG.totalLevels}`;
 			state.playerGrid.fill(0);
 			document.querySelectorAll('.cell').forEach(c => updateCellVisual(c, 0));
-			
 			generateLevel(state.level);
-
 			if(state.mode === 'vs') startTimer();
 		}
 
@@ -623,8 +531,6 @@
 			if(state.timer) clearInterval(state.timer);
 			const bar = document.getElementById('timer-bar');
 			bar.style.width = '100%';
-			
-			// Süre formülü: Seviye arttıkça azalır (Min 20sn, Max 90sn)
 			let duration = Math.max(20, 90 - (state.level * 3));
 			let left = duration;
 			
@@ -632,42 +538,30 @@
 				left -= 0.1;
 				let pct = (left / duration) * 100;
 				bar.style.width = pct + '%';
-				
 				if(left <= 0) {
 					clearInterval(state.timer);
 					playTone('error');
-					alert("Süre Doldu! Baştan Başla.");
-					location.reload();
+					showInfoModal("Süre Doldu", "Baştan başlaman gerekiyor.", "⏰", "Tekrar Dene", () => location.reload());
 				}
 			}, 100);
 		}
 
 		function checkSolution() {
 			let correct = true;
-			for(let i=0; i<16; i++) {
-				if(state.playerGrid[i] !== state.targetGrid[i]) correct = false;
-			}
+			for(let i=0; i<16; i++) if(state.playerGrid[i] !== state.targetGrid[i]) correct = false;
 
 			if(correct) {
 				if(state.timer) clearInterval(state.timer);
 				playTone('win');
-				// Modal hazırla
-				const btn = document.getElementById('next-btn');
-				const title = document.getElementById('end-title');
-				
 				if(state.level === CONFIG.totalLevels) {
-					title.innerText = "OYUN BİTTİ!";
-					document.getElementById('end-msg').innerText = "Tüm desenlerin efendisisin.";
-					btn.innerText = "Başa Dön";
-					btn.onclick = () => location.reload();
+					showInfoModal("TEBRİKLER!", "Tüm desenleri tamamladın. Harika iş!", "🏆", "Başa Dön", () => location.reload());
 				} else {
-					title.innerText = getRandomPraise();
-					document.getElementById('end-msg').innerText = "Sonraki seviyeye geç.";
-					btn.innerText = "Devam Et";
-					btn.onclick = nextLevel;
+					showInfoModal("Harika!", "Doğru desen.", "⭐", "Devam Et", () => {
+						document.getElementById('end-modal').classList.remove('active');
+						state.level++;
+						loadLevel();
+					});
 				}
-				
-				document.getElementById('end-modal').classList.add('active');
 			} else {
 				playTone('error');
 				const board = document.getElementById('player-board');
@@ -676,28 +570,29 @@
 			}
 		}
 
-		function nextLevel() {
-			document.getElementById('end-modal').classList.remove('active');
-			state.level++;
-			loadLevel();
+		// Genel Modal Fonksiyonu (Yardım ve Bitiş için)
+		function showInfoModal(title, msg, icon, btnText, action) {
+			document.getElementById('modal-title').innerText = title;
+			document.getElementById('modal-msg').innerText = msg;
+			document.getElementById('modal-icon').innerText = icon;
+			const btn = document.getElementById('modal-btn');
+			btn.innerText = btnText;
+			btn.onclick = action;
+			document.getElementById('end-modal').classList.add('active');
 		}
 
-		function getRandomPraise() {
-			const words = ["Muhteşem!", "Kusursuz!", "Keskin Göz!", "Harika Gidiyorsun!"];
-			return words[Math.floor(Math.random()*words.length)];
+		function showHelp() {
+			showInfoModal(
+				"Nasıl Oynanır?", 
+				"Amaç: Hedef tahtasındaki desenin aynısını kendi alanında oluşturmaktır.\n\n1. Aşağıdaki panelden bir şekil seç.\n2. Kendi alanındaki karelere dokunarak şekli yerleştir.\n3. Deseni tamamlayınca 'KONTROL ET' butonuna bas.", 
+				"💡", 
+				"Anladım", 
+				() => document.getElementById('end-modal').classList.remove('active')
+			);
 		}
 
-		// Resize
-		window.addEventListener('resize', () => {
-			renderTarget();
-			// Oyuncu gridi CSS ile hallediliyor, yeniden çizmeye gerek yok
-		});
-
-		// Initial render for palette icons
-		window.onload = () => {
-		   // Modal bekliyor
-		};
-
+		window.addEventListener('resize', () => { renderTarget(); });
+		window.onload = () => {};
 	</script>
 </body>
 </html>
